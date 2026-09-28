@@ -25,7 +25,7 @@ def login():
         else:
             flash("이름 또는 학번(비밀번호)이 올바르지 않습니다.")
             
-    return render_template('login.html')
+    return render_template('index.html', page='login')
 
 @app.route('/logout')
 def logout():
@@ -45,7 +45,7 @@ def shop():
         session['user'] = user_res.data[0]
 
     products = supabase.table('products').select('*').order('id').execute().data
-    return render_template('shop.html', user=session['user'], products=products)
+    return render_template('index.html', page='shop', products=products)
 
 # 3. 상품 구매
 @app.route('/buy/<int:product_id>', methods=['POST'])
@@ -73,7 +73,7 @@ def buy(product_id):
 
     return redirect(url_for('shop'))
 
-# 4. 관리자 페이지 (상품 관리 + 포인트 지급)
+# 4. 관리자 페이지
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -82,7 +82,7 @@ def admin():
 
     students = supabase.table('users').select('*').eq('is_admin', False).order('student_id').execute().data
     products = supabase.table('products').select('*').order('id').execute().data
-    return render_template('admin.html', students=students, products=products)
+    return render_template('index.html', page='admin', students=students, products=products)
 
 # 4-1. 상품 추가 (관리자)
 @app.route('/admin/add_product', methods=['POST'])
@@ -98,7 +98,17 @@ def add_product():
     flash("상품이 추가되었습니다.")
     return redirect(url_for('admin'))
 
-# 4-2. 공부시간 기반 포인트 지급 (10분당 2p)
+# 4-2. 상품 삭제 (관리자)
+@app.route('/admin/delete_product/<int:product_id>', methods=['POST'])
+def delete_product(product_id):
+    if 'user' not in session or not session['user'].get('is_admin'):
+        return redirect(url_for('shop'))
+        
+    supabase.table('products').delete().eq('id', product_id).execute()
+    flash("상품이 삭제되었습니다.")
+    return redirect(url_for('admin'))
+
+# 4-3. 공부시간 기반 포인트 지급 (10분당 2p)
 @app.route('/admin/add_points', methods=['POST'])
 def add_points():
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -133,4 +143,4 @@ def doodle():
             return redirect(url_for('doodle'))
 
     posts = supabase.table('board').select('*').order('created_at', desc=True).execute().data
-    return render_template('doodle.html', posts=posts)
+    return render_template('index.html', page='doodle', posts=posts)
