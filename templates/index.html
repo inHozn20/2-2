@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>간단 방명록</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+        input, textarea, button { padding: 10px; font-size: 16px; }
+        .card { background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>📖 방명록</h1>
+    
+    <form action="/add" method="POST">
+        <input type="text" name="name" placeholder="이름" required>
+        <textarea name="message" placeholder="메시지를 남겨주세요" required></textarea>
+        <button type="submit">작성하기</button>
+    </form>
+
+    <h2>작성된 글 목록</h2>
+    {% for item in posts %}
+        <div class="card">
+            <strong>{{ item.name }}</strong>
+            <p>{{ item.message }}</p>
+            <small>{{ item.created_at[:10] }}</small>
+        </div>
+    {% endfor %}
+</body>
+</html>
