@@ -16,7 +16,6 @@ def login():
         name = request.form.get('name')
         student_id = request.form.get('student_id')
         
-        # 유저 조회
         res = supabase.table('users').select('*').eq('name', name).eq('student_id', student_id).execute()
         if res.data:
             user = res.data[0]
@@ -39,7 +38,6 @@ def shop():
     if 'user' not in session:
         return redirect(url_for('login'))
     
-    # 최신 내 정보 업데이트
     user_res = supabase.table('users').select('*').eq('student_id', session['user']['student_id']).execute()
     if user_res.data:
         session['user'] = user_res.data[0]
@@ -62,7 +60,6 @@ def buy(product_id):
     elif user['points'] < product['price']:
         flash("포인트가 부족합니다.")
     else:
-        # 포인트 차감 & 재고 차감 & 구매 내역 기록
         new_points = user['points'] - product['price']
         new_stock = product['stock'] - 1
         
@@ -73,7 +70,7 @@ def buy(product_id):
 
     return redirect(url_for('shop'))
 
-# 4. 관리자 페이지
+# 4. 관리자 페이지 (포인트, 상품, 구매 내역 관리)
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -82,9 +79,14 @@ def admin():
 
     students = supabase.table('users').select('*').eq('is_admin', False).order('student_id').execute().data
     products = supabase.table('products').select('*').order('id').execute().data
-    return render_template('index.html', page='admin', students=students, products=products)
+    
+    # 학생들의 쿠폰 구매 내역 조회 (유저 및 상품 정보 포함)
+    purchases_res = supabase.table('purchases').select('id, created_at, users(name, student_id), products(title, price)').order('created_at', desc=True).execute()
+    purchases = purchases_res.data if purchases_res.data else []
 
-# 4-1. 상품 추가 (관리자)
+    return render_template('index.html', page='admin', students=students, products=products, purchases=purchases)
+
+# 4-1. 상품 추가
 @app.route('/admin/add_product', methods=['POST'])
 def add_product():
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -98,7 +100,7 @@ def add_product():
     flash("상품이 추가되었습니다.")
     return redirect(url_for('admin'))
 
-# 4-2. 상품 삭제 (관리자)
+# 4-2. 상품 삭제
 @app.route('/admin/delete_product/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -108,7 +110,7 @@ def delete_product(product_id):
     flash("상품이 삭제되었습니다.")
     return redirect(url_for('admin'))
 
-# 4-3. 공부시간 기반 포인트 지급 (10분당 2p)
+# 4-3. 공부시간 기반 포인트 지급
 @app.route('/admin/add_points', methods=['POST'])
 def add_points():
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -117,7 +119,6 @@ def add_points():
     student_id = request.form.get('student_id')
     study_minutes = int(request.form.get('study_minutes', 0))
     
-    # 10분당 2p 계산
     added_points = (study_minutes // 10) * 2
     
     student = supabase.table('users').select('*').eq('student_id', student_id).execute().data[0]
@@ -127,19 +128,20 @@ def add_points():
     flash(f"{student['name']} 학생에게 {added_points}p가 지급되었습니다. (공부시간: {study_minutes}분)")
     return redirect(url_for('admin'))
 
-# 5. 낙서장 탭
+# 5. 펜 필기 화이트보드 낙서장
 @app.route('/doodle', methods=['GET', 'POST'])
 def doodle():
     if 'user' not in session:
         return redirect(url_for('login'))
         
     if request.method == 'POST':
-        content = request.form.get('content')
-        if content:
+        image_data = request.form.get('image_data')
+        if image_data:
             supabase.table('board').insert({
                 'author_name': session['user']['name'],
-                'content': content
+                'image_data': image_data
             }).execute()
+            flash("화이트보드 그림이 공유되었습니다!")
             return redirect(url_for('doodle'))
 
     posts = supabase.table('board').select('*').order('created_at', desc=True).execute().data
