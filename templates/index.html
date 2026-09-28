@@ -2,30 +2,395 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>간단 방명록</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏫 2학년 2반 학급 상점</title>
     <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
-        form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
-        input, textarea, button { padding: 10px; font-size: 16px; }
-        .card { background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --danger-color: #ef4444;
+            --danger-hover: #dc2626;
+            --accent-yellow: #fef08a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* */
+        header {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .user-info {
+            text-align: right;
+            font-size: 0.95rem;
+        }
+
+        .user-info .point-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: var(--accent-yellow);
+        }
+
+        .logout-btn {
+            color: #fca5a5;
+            text-decoration: none;
+            margin-left: 10px;
+            font-size: 0.85rem;
+        }
+
+        .logout-btn:hover {
+            text-decoration: underline;
+        }
+
+        nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        nav a {
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        nav a:hover, nav a.active {
+            background: #e0e7ff;
+            color: var(--primary-color);
+        }
+
+        nav a.admin-tab {
+            color: var(--danger-color);
+        }
+
+        nav a.admin-tab:hover, nav a.admin-tab.active {
+            background: #fee2e2;
+            color: var(--danger-color);
+        }
+
+        /* */
+        .card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-top: 10px;
+            color: var(--text-main);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+        }
+
+        button.btn-danger {
+            background: var(--danger-color);
+        }
+
+        button.btn-danger:hover {
+            background: var(--danger-hover);
+        }
+
+        button:disabled {
+            background: #cbd5e1 !important;
+            cursor: not-allowed;
+            color: #94a3b8;
+        }
+
+        .flash-msg {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #fcd34d;
+            font-weight: 500;
+        }
+
+        /* */
     </style>
 </head>
 <body>
-    <h1>📖 방명록</h1>
-    
-    <form action="/add" method="POST">
-        <input type="text" name="name" placeholder="이름" required>
-        <textarea name="message" placeholder="메시지를 남겨주세요" required></textarea>
-        <button type="submit">작성하기</button>
-    </form>
+    <div class="container">
 
-    <h2>작성된 글 목록</h2>
-    {% for item in posts %}
-        <div class="card">
-            <strong>{{ item.name }}</strong>
-            <p>{{ item.message }}</p>
-            <small>{{ item.created_at[:10] }}</small>
+        {% if page == 'login' %}
+        <!-- 1. 로그인 화면 -->
+        <div class="card" style="max-width: 400px; margin: 80px auto;">
+            <h2 style="text-align: center; margin-bottom: 20px;">🔒 로그인</h2>
+            
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="flash-msg">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="/login" method="POST">
+                <label for="name">이름 (아이디)</label>
+                <input type="text" id="name" name="name" placeholder="예: 강동현 또는 관리자" required autocomplete="off">
+                
+                <label for="student_id">학번 (비밀번호)</label>
+                <input type="password" id="student_id" name="student_id" placeholder="예: 20201 또는 20200" required>
+                
+                <button type="submit">로그인하기</button>
+            </form>
         </div>
-    {% endfor %}
+
+        {% else %}
+
+        <!-- 상단 헤더 & 네비게이션 -->
+        <header>
+            <div>
+                <h1>🏫 2-2 학급 상점</h1>
+            </div>
+            <div class="user-info">
+                <span><strong>{{ session['user']['name'] }}</strong> ({{ session['user']['student_id'] }})님</span><br>
+                <span>보유 포인트: <span class="point-badge">{{ session['user']['points'] }} P</span></span>
+                <a href="/logout" class="logout-btn">로그아웃</a>
+            </div>
+        </header>
+
+        <nav>
+            <a href="/shop" class="{{ 'active' if page == 'shop' }}">🛍️ 상점</a>
+            <a href="/doodle" class="{{ 'active' if page == 'doodle' }}">✏️ 낙서장</a>
+            {% if session['user'].get('is_admin') %}
+            <a href="/admin" class="admin-tab {{ 'active' if page == 'admin' }}">⚙️ 관리자</a>
+            {% endif %}
+        </nav>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-msg">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if page == 'shop' %}
+        <!-- 2. 상점 메인 화면 -->
+        <h2 style="margin-bottom: 12px;">🎁 상품 목록</h2>
+        <div class="grid">
+            {% for product in products %}
+            <div class="card" style="margin-bottom: 0;">
+                <h3 style="font-size: 1.1rem;">{{ product.title }}</h3>
+                <p style="font-size: 1.3rem; font-weight: bold; color: var(--primary-color); margin: 8px 0;">
+                    {{ product.price }} P
+                </p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                    남은 재고: {{ product.stock }}개
+                </p>
+                
+                {% if product.stock > 0 %}
+                    {% if session['user']['points'] >= product.price %}
+                        <form action="/buy/{{ product.id }}" method="POST">
+                            <button type="submit">구매하기</button>
+                        </form>
+                    {% else %}
+                        <button disabled>포인트 부족</button>
+                    {% endif %}
+                {% else %}
+                    <button disabled>품절</button>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
+                현재 등록된 상품이 없습니다.
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif page == 'doodle' %}
+        <!-- 3. 낙서장 화면 -->
+        <h2 style="margin-bottom: 12px;">✏️ 학급 낙서장</h2>
+        <div class="card">
+            <form action="/doodle" method="POST">
+                <textarea name="content" placeholder="응원의 메시지나 하고 싶은 말을 작성해 보세요!" rows="3" required></textarea>
+                <button type="submit">글 남기기</button>
+            </form>
+        </div>
+
+        <h3>💬 등록된 메시지</h3>
+        <div style="margin-top: 15px;">
+            {% for post in posts %}
+            <div class="card" style="margin-bottom: 12px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <strong>{{ post.author_name }}</strong>
+                    <small style="color: var(--text-muted);">{{ post.created_at[:16].replace('T', ' ') }}</small>
+                </div>
+                <p style="white-space: pre-wrap;">{{ post.content }}</p>
+            </div>
+            {% else %}
+            <div class="card" style="text-align: center; color: var(--text-muted);">
+                첫 번째 메시지를 남겨보세요!
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif page == 'admin' %}
+        <!-- 4. 관리자 화면 -->
+        <h2 style="margin-bottom: 12px;">⚙️ 관리자 대시보드</h2>
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+            <!-- 포인트 지급 -->
+            <div class="card" style="margin-bottom: 0;">
+                <h3>⏱️ 공부시간 포인트 추가</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">10분당 2 포인트가 자동 부여됩니다.</p>
+                <form action="/admin/add_points" method="POST">
+                    <label for="student_select">학생 선택</label>
+                    <select id="student_select" name="student_id" required>
+                        {% for student in students %}
+                        <option value="{{ student.student_id }}">{{ student.student_id }} {{ student.name }} (현재 {{ student.points }}P)</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <label for="study_minutes">공부 시간 (분 단위)</label>
+                    <input type="number" id="study_minutes" name="study_minutes" placeholder="예: 50 (10P 부여됨)" min="10" step="10" required>
+                    
+                    <button type="submit">포인트 지급하기</button>
+                </form>
+            </div>
+
+            <!-- 신규 상품 등록 -->
+            <div class="card" style="margin-bottom: 0;">
+                <h3>📦 신규 상품 등록</h3>
+                <form action="/admin/add_product" method="POST">
+                    <label for="title">상품명</label>
+                    <input type="text" id="title" name="title" placeholder="예: 간식 교환권" required>
+                    
+                    <label for="price">가격 (포인트)</label>
+                    <input type="number" id="price" name="price" placeholder="예: 20" min="1" required>
+                    
+                    <label for="stock">재고 수량</label>
+                    <input type="number" id="stock" name="stock" placeholder="예: 5" min="1" required>
+                    
+                    <button type="submit">상품 등록하기</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 등록 상품 삭제 관리 -->
+        <div class="card" style="margin-top: 20px;">
+            <h3>📋 등록된 상품 관리</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 12px; text-align: left; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th style="padding: 10px;">ID</th>
+                            <th style="padding: 10px;">상품명</th>
+                            <th style="padding: 10px;">가격</th>
+                            <th style="padding: 10px;">재고</th>
+                            <th style="padding: 10px;">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;">{{ product.id }}</td>
+                            <td style="padding: 10px;"><strong>{{ product.title }}</strong></td>
+                            <td style="padding: 10px;">{{ product.price }} P</td>
+                            <td style="padding: 10px;">{{ product.stock }} 개</td>
+                            <td style="padding: 10px;">
+                                <form action="/admin/delete_product/{{ product.id }}" method="POST" style="margin: 0;">
+                                    <button type="submit" class="btn-danger" style="padding: 6px 12px; font-size: 0.8rem; width: auto;">삭제</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
 </body>
 </html>
