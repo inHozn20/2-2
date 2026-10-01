@@ -89,7 +89,47 @@ def ranking():
     
     return render_template('index.html', page='ranking', rankings=rankings)
 
-# 5. 관리자 페이지
+# 5. 공지사항 페이지 (추가)
+@app.route('/notices')
+def notices():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+        
+    notices_res = supabase.table('notices').select('*').order('created_at', desc=True).execute()
+    notices_list = notices_res.data if notices_res.data else []
+    
+    return render_template('index.html', page='notice', notices=notices_list)
+
+# 5-1. 공지사항 등록 (추가)
+@app.route('/admin/add_notice', methods=['POST'])
+def add_notice():
+    if 'user' not in session or not session['user'].get('is_admin'):
+        return redirect(url_for('shop'))
+        
+    title = request.form.get('title')
+    content = request.form.get('content')
+    
+    if title and content:
+        supabase.table('notices').insert({
+            'title': title,
+            'content': content,
+            'author': session['user'].get('name', '관리자')
+        }).execute()
+        flash("📢 새로운 공지사항이 등록되었습니다.")
+        
+    return redirect(url_for('notices'))
+
+# 5-2. 공지사항 삭제 (추가)
+@app.route('/admin/delete_notice/<int:notice_id>', methods=['POST'])
+def delete_notice(notice_id):
+    if 'user' not in session or not session['user'].get('is_admin'):
+        return redirect(url_for('shop'))
+        
+    supabase.table('notices').delete().eq('id', notice_id).execute()
+    flash("공지사항이 삭제되었습니다.")
+    return redirect(url_for('notices'))
+
+# 6. 관리자 페이지
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -105,7 +145,7 @@ def admin():
 
     return render_template('index.html', page='admin', students=students, products=products, purchases=purchases)
 
-# 5-1. 쿠폰 사용/사용전 상태 토글
+# 6-1. 쿠폰 사용/사용전 상태 토글
 @app.route('/admin/toggle_used/<int:purchase_id>', methods=['POST'])
 def toggle_used(purchase_id):
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -121,7 +161,7 @@ def toggle_used(purchase_id):
     flash("쿠폰 사용 상태가 변경되었습니다.")
     return redirect(url_for('admin'))
 
-# 5-2. 상품 추가
+# 6-2. 상품 추가
 @app.route('/admin/add_product', methods=['POST'])
 def add_product():
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -135,7 +175,7 @@ def add_product():
     flash("상품이 추가되었습니다.")
     return redirect(url_for('admin'))
 
-# 5-3. 상품 삭제
+# 6-3. 상품 삭제
 @app.route('/admin/delete_product/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -145,7 +185,7 @@ def delete_product(product_id):
     flash("상품이 삭제되었습니다.")
     return redirect(url_for('admin'))
 
-# 5-4. 공부시간 기반 포인트 추가
+# 6-4. 공부시간 기반 포인트 추가
 @app.route('/admin/add_points', methods=['POST'])
 def add_points():
     if 'user' not in session or not session['user'].get('is_admin'):
