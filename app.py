@@ -1,5 +1,4 @@
 import os
-import random
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from supabase import create_client, Client
 
@@ -46,12 +45,32 @@ def shop():
 
     products = supabase.table('products').select('*').order('id').execute().data
     
-    # 랜덤 상품 및 구성품 조회
-    random_products = supabase.table('random_products').select('*, random_items(*)').order('id').execute().data
-    
-    return render_template('index.html', page='shop', products=products, random_products=random_products)
+    return render_template('index.html', page='shop', products=products)
 
-# 3. 일반 상품 구매
+# 3. 마이페이지 (내가 구매한 쿠폰 및 사용 유무 조회)
+@app.route('/mypage')
+def mypage():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    # 내 정보 최신화
+    user_id = session['user']['student_id']
+    user_res = supabase.table('users').select('*').eq('student_id', user_id).execute()
+    if user_res.data:
+        session['user'] = user_res.data[0]
+
+    # 로그인한 사용자의 구매 내역 조회
+    my_purchases_res = supabase.table('purchases')\
+        .select('id, created_at, is_used, products(title, price)')\
+        .eq('student_id', user_id)\
+        .order('created_at', desc=True)\
+        .execute()
+    
+    my_purchases = my_purchases_res.data if my_purchases_res.data else []
+
+    return render_template('index.html', page='mypage', purchases=my_purchases)
+
+# 4. 상품 구매 (재고 시스템 삭제됨)
 @app.route('/buy/<int:product_id>', methods=['POST'])
 def buy(product_id):
     if 'user' not in session:
@@ -61,16 +80,12 @@ def buy(product_id):
     user = supabase.table('users').select('*').eq('student_id', user_id).execute().data[0]
     product = supabase.table('products').select('*').eq('id', product_id).execute().data[0]
 
-    if product['stock'] <= 0:
-        flash("재고가 부족합니다.")
-    elif user['points'] < product['price']:
+    if user['points'] < product['price']:
         flash("포인트가 부족합니다.")
     else:
         new_points = user['points'] - product['price']
-        new_stock = product['stock'] - 1
         
         supabase.table('users').update({'points': new_points}).eq('student_id', user_id).execute()
-        supabase.table('products').update({'stock': new_stock}).eq('id', product_id).execute()
         
         supabase.table('purchases').insert({
             'student_id': user_id, 
@@ -82,53 +97,7 @@ def buy(product_id):
 
     return redirect(url_for('shop'))
 
-# 3-1. 랜덤 상품 뽑기 (돌림판)
-@app.route('/buy_random/<int:random_product_id>', methods=['POST'])
-def buy_random(random_product_id):
-    if 'user' not in session:
-        return redirect(url_for('login'))
-        
-    user_id = session['user']['student_id']
-    user = supabase.table('users').select('*').eq('student_id', user_id).execute().data[0]
-    
-    rand_prod = supabase.table('random_products').select('*, random_items(*)').eq('id', random_product_id).execute().data[0]
-    items = rand_prod.get('random_items', [])
-
-    if not items:
-        flash("이 랜덤 상품에는 당첨 항목이 설정되어 있지 않습니다.")
-        return redirect(url_for('shop'))
-
-    if user['points'] < rand_prod['price']:
-        flash("포인트가 부족합니다.")
-        return redirect(url_for('shop'))
-
-    # 가중치 기반 무작위 추첨 (확률 계산)
-    weights = [item['weight'] for item in items]
-    won_item = random.choices(items, weights=weights, k=1)[0]
-
-    # 포인트 차감
-    new_points = user['points'] - rand_prod['price']
-    supabase.table('users').update({'points': new_points}).eq('student_id', user_id).execute()
-
-    # 일반 상품으로 가상 등록 또는 당첨 처리 쿠폰 기록 (상품제목에 당첨 결과 기록)
-    # 1) 기존 products 테이블에 임시 당첨 상품이 없으면 만들어주거나,
-    # 2) 당첨 결과를 title로 하는 임시 상품 생성을 진행합니다.
-    temp_product = supabase.table('products').insert({
-        'title': f"[{rand_prod['title']}] 당첨: {won_item['item_title']}",
-        'price': rand_prod['price'],
-        'stock': 0
-    }).execute().data[0]
-
-    supabase.table('purchases').insert({
-        'student_id': user_id,
-        'product_id': temp_product['id'],
-        'is_used': False
-    }).execute()
-
-    flash(f"🎁 {rand_prod['title']} 돌리기 결과: [{won_item['item_title']}] 에 당첨되었습니다!")
-    return redirect(url_for('shop'))
-
-# 4. 공부시간 랭킹 페이지
+# 5. 공부시간 랭킹 페이지
 @app.route('/ranking')
 def ranking():
     if 'user' not in session:
@@ -139,7 +108,7 @@ def ranking():
     
     return render_template('index.html', page='ranking', rankings=rankings)
 
-# 5. 공지사항 페이지
+# 6. 공지사항 페이지
 @app.route('/notices')
 def notices():
     if 'user' not in session:
@@ -177,7 +146,7 @@ def delete_notice(notice_id):
     flash("공지사항이 삭제되었습니다.")
     return redirect(url_for('notices'))
 
-# 6. 관리자 페이지
+# 7. 관리자 페이지
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -186,14 +155,13 @@ def admin():
 
     students = supabase.table('users').select('*').eq('is_admin', False).order('student_id').execute().data
     products = supabase.table('products').select('*').order('id').execute().data
-    random_products = supabase.table('random_products').select('*, random_items(*)').order('id').execute().data
     
     purchases_res = supabase.table('purchases').select('id, created_at, is_used, users(name, student_id), products(title, price)').order('created_at', desc=True).execute()
     purchases = purchases_res.data if purchases_res.data else []
 
-    return render_template('index.html', page='admin', students=students, products=products, purchases=purchases, random_products=random_products)
+    return render_template('index.html', page='admin', students=students, products=products, purchases=purchases)
 
-# 6-1. 쿠폰 사용/사용전 상태 토글
+# 7-1. 쿠폰 사용/사용전 상태 토글
 @app.route('/admin/toggle_used/<int:purchase_id>', methods=['POST'])
 def toggle_used(purchase_id):
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -206,7 +174,7 @@ def toggle_used(purchase_id):
     flash("쿠폰 사용 상태가 변경되었습니다.")
     return redirect(url_for('admin'))
 
-# 6-2. 상품 추가
+# 7-2. 상품 추가 (재고 입력 삭제)
 @app.route('/admin/add_product', methods=['POST'])
 def add_product():
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -214,13 +182,12 @@ def add_product():
     
     title = request.form.get('title')
     price = int(request.form.get('price', 0))
-    stock = int(request.form.get('stock', 0))
     
-    supabase.table('products').insert({'title': title, 'price': price, 'stock': stock}).execute()
+    supabase.table('products').insert({'title': title, 'price': price}).execute()
     flash("상품이 추가되었습니다.")
     return redirect(url_for('admin'))
 
-# 6-3. 상품 삭제
+# 7-3. 상품 삭제
 @app.route('/admin/delete_product/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -230,59 +197,7 @@ def delete_product(product_id):
     flash("상품이 삭제되었습니다.")
     return redirect(url_for('admin'))
 
-# 6-4. 랜덤 상품 세트 추가 (돌림판 등)
-@app.route('/admin/add_random_product', methods=['POST'])
-def add_random_product():
-    if 'user' not in session or not session['user'].get('is_admin'):
-        return redirect(url_for('shop'))
-
-    title = request.form.get('title')
-    price = int(request.form.get('price', 0))
-
-    supabase.table('random_products').insert({'title': title, 'price': price}).execute()
-    flash("🎰 새로운 랜덤 상품 세트가 등록되었습니다.")
-    return redirect(url_for('admin'))
-
-# 6-5. 랜덤 상품 구성품 & 확률(가중치) 추가
-@app.route('/admin/add_random_item', methods=['POST'])
-def add_random_item():
-    if 'user' not in session or not session['user'].get('is_admin'):
-        return redirect(url_for('shop'))
-
-    random_product_id = int(request.form.get('random_product_id'))
-    item_title = request.form.get('item_title')
-    weight = int(request.form.get('weight', 1))
-
-    supabase.table('random_items').insert({
-        'random_product_id': random_product_id,
-        'item_title': item_title,
-        'weight': weight
-    }).execute()
-    
-    flash("🎲 랜덤 구성품 및 가중치가 추가되었습니다.")
-    return redirect(url_for('admin'))
-
-# 6-6. 랜덤 구성품 삭제
-@app.route('/admin/delete_random_item/<int:item_id>', methods=['POST'])
-def delete_random_item(item_id):
-    if 'user' not in session or not session['user'].get('is_admin'):
-        return redirect(url_for('shop'))
-
-    supabase.table('random_items').delete().eq('id', item_id).execute()
-    flash("구성품이 삭제되었습니다.")
-    return redirect(url_for('admin'))
-
-# 6-7. 랜덤 상품 세트 전체 삭제
-@app.route('/admin/delete_random_product/<int:random_product_id>', methods=['POST'])
-def delete_random_product(random_product_id):
-    if 'user' not in session or not session['user'].get('is_admin'):
-        return redirect(url_for('shop'))
-
-    supabase.table('random_products').delete().eq('id', random_product_id).execute()
-    flash("랜덤 상품 세트가 삭제되었습니다.")
-    return redirect(url_for('admin'))
-
-# 6-8. 공부시간 기반 포인트 추가
+# 7-4. 공부시간 기반 포인트 추가
 @app.route('/admin/add_points', methods=['POST'])
 def add_points():
     if 'user' not in session or not session['user'].get('is_admin'):

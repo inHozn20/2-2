@@ -18,7 +18,6 @@
             --success-color: #22c55e;
             --success-hover: #16a34a;
             --accent-yellow: #fef08a;
-            --purple-color: #8b5cf6;
         }
 
         * {
@@ -174,9 +173,6 @@
 
         button:hover { background: var(--primary-hover); }
 
-        button.btn-purple { background: var(--purple-color); }
-        button.btn-purple:hover { background: #7c3aed; }
-
         button.btn-danger { background: var(--danger-color); }
         button.btn-danger:hover { background: var(--danger-hover); }
 
@@ -231,66 +227,6 @@
         .rank-top-1 { color: #f59e0b; font-size: 1.3rem; }
         .rank-top-2 { color: #94a3b8; font-size: 1.2rem; }
         .rank-top-3 { color: #b45309; font-size: 1.2rem; }
-
-        /* 확률 목록 박스 */
-        .probability-box {
-            background: #f1f5f9;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            margin-bottom: 12px;
-        }
-        .probability-box li {
-            list-style: none;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 2px;
-        }
-
-        /* 🎪 돌림판 모달 스타일 */
-        .roulette-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .roulette-container {
-            background: white;
-            padding: 24px;
-            border-radius: 20px;
-            text-align: center;
-            position: relative;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            max-width: 360px;
-            width: 90%;
-        }
-        .roulette-wrapper {
-            position: relative;
-            width: 280px;
-            height: 280px;
-            margin: 20px auto;
-        }
-        #rouletteCanvas {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        }
-        .roulette-arrow {
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0; height: 0;
-            border-left: 14px solid transparent;
-            border-right: 14px solid transparent;
-            border-top: 24px solid #ef4444;
-            z-index: 10;
-        }
     </style>
 </head>
 
@@ -337,6 +273,7 @@
 
         <nav>
             <a href="/shop" class="{{ 'active' if page == 'shop' }}">🛒 상점</a>
+            <a href="/mypage" class="{{ 'active' if page == 'mypage' }}">👤 마이페이지</a>
             <a href="/ranking" class="{{ 'active' if page == 'ranking' }}">🏆 공부시간 랭킹</a>
             <a href="/notices" class="{{ 'active' if page == 'notice' }}">📢 공지사항</a>
             {% if session['user'].get('is_admin') %}
@@ -353,84 +290,8 @@
         {% endwith %}
 
         {% if page == 'shop' %}
-        <!-- 2. 상점 메인 화면 -->
-
-        <!-- 🎰 랜덤 뽑기 / 돌림판 상품 섹션 -->
-        <h2 style="margin-bottom: 12px;">🎰 랜덤 상품 (돌림판)</h2>
-        <div class="grid" style="margin-bottom: 24px;">
-            {% for rp in random_products %}
-            {% set total_weight = namespace(value=0) %}
-            {% for item in rp.random_items %}
-                {% set total_weight.value = total_weight.value + item.weight %}
-            {% endfor %}
-
-            <div class="card" style="margin-bottom: 0; border: 2px solid #c084fc;">
-                <h3 style="font-size: 1.1rem; color: #7e22ce;">🎰 {{ rp.title }}</h3>
-                <p style="font-size: 1.3rem; font-weight: bold; color: var(--purple-color); margin: 8px 0;">
-                    {{ rp.price }} P
-                </p>
-
-                <!-- 구성품 및 확률 목록 -->
-                <div class="probability-box">
-                    <strong style="display:block; margin-bottom:4px;">🎯 당첨 확률 목록</strong>
-                    {% if rp.random_items %}
-                        <ul>
-                        {% for item in rp.random_items %}
-                            <li>
-                                <span>{{ item.item_title }}</span>
-                                <strong>{{ "%.1f"|format((item.weight / total_weight.value) * 100) }}%</strong>
-                            </li>
-                        {% endfor %}
-                        </ul>
-                    {% else %}
-                        <span style="color: var(--text-muted);">등록된 항목이 없습니다.</span>
-                    {% endif %}
-                </div>
-
-                {% if rp.random_items %}
-                    {% if session['user']['points'] >= rp.price %}
-                        <!-- 돌림판 모달을 여는 버튼 -->
-                        <button type="button" 
-                                class="btn-purple" 
-                                data-id="{{ rp.id }}" 
-                                data-title="{{ rp.title }}" 
-                                data-items='{{ rp.random_items | tojson | safe }}'
-                                onclick="handleRouletteClick(this)">
-                            🎲 돌림판 돌리기
-                        </button>
-                    {% else %}
-                        <button disabled>포인트 부족</button>
-                    {% endif %}
-                {% else %}
-                    <button disabled>준비 중</button>
-                {% endif %}
-            </div>
-            {% else %}
-            <div class="card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
-                현재 등록된 랜덤 상품이 없습니다.
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- 숨겨진 실제 서버 제출용 폼 -->
-        <form id="realBuyForm" method="POST" style="display:none;"></form>
-
-        <!-- 🎪 돌림판 연출 모달 팝업 -->
-        <div id="rouletteModal" class="roulette-modal">
-            <div class="roulette-container">
-                <h3 id="rouletteTitle" style="color: var(--purple-color);">🎰 돌림판을 돌립니다!</h3>
-                
-                <div class="roulette-wrapper">
-                    <div class="roulette-arrow"></div>
-                    <canvas id="rouletteCanvas" width="300" height="300"></canvas>
-                </div>
-
-                <button id="spinBtn" class="btn-purple" style="font-size: 1.1rem; padding: 10px;" onclick="spinWheel()">🔥 SPINS!</button>
-            </div>
-        </div>
-
-        <!-- 📦 일반 상품 섹션 -->
-        <h2 style="margin-bottom: 12px;">📦 포인트 상점 (일반)</h2>
+        <!-- 2. 상점 메인 화면 (일반 상품) -->
+        <h2 style="margin-bottom: 12px;">📦 포인트 상점</h2>
         <div class="grid">
             {% for product in products %}
             <div class="card" style="margin-bottom: 0;">
@@ -438,20 +299,13 @@
                 <p style="font-size: 1.3rem; font-weight: bold; color: var(--primary-color); margin: 8px 0;">
                     {{ product.price }} P
                 </p>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-                    남은 재고: {{ product.stock }}개
-                </p>
                 
-                {% if product.stock > 0 %}
-                    {% if session['user']['points'] >= product.price %}
-                        <form action="/buy/{{ product.id }}" method="POST">
-                            <button type="submit">구매</button>
-                        </form>
-                    {% else %}
-                        <button disabled>포인트 부족</button>
-                    {% endif %}
+                {% if session['user']['points'] >= product.price %}
+                    <form action="/buy/{{ product.id }}" method="POST">
+                        <button type="submit">구매</button>
+                    </form>
                 {% else %}
-                    <button disabled>품절</button>
+                    <button disabled>포인트 부족</button>
                 {% endif %}
             </div>
             {% else %}
@@ -461,8 +315,49 @@
             {% endfor %}
         </div>
 
+        {% elif page == 'mypage' %}
+        <!-- 3. 마이페이지 (내 쿠폰 함) -->
+        <h2 style="margin-bottom: 12px;">👤 내 쿠폰함</h2>
+        <div class="card">
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
+                구매한 쿠폰의 목록과 관리자의 사용 승인 여부를 확인할 수 있습니다.
+            </p>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color); background: #f1f5f9;">
+                            <th style="padding: 10px;">구매 일시</th>
+                            <th style="padding: 10px;">쿠폰명</th>
+                            <th style="padding: 10px;">가격</th>
+                            <th style="padding: 10px; text-align: center;">사용 상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in purchases %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px; color: var(--text-muted);">{{ p.created_at[:16].replace('T', ' ') }}</td>
+                            <td style="padding: 10px;"><strong>{{ p.products.title if p.products else '삭제된 상품' }}</strong></td>
+                            <td style="padding: 10px;">{{ p.products.price if p.products else '-' }} P</td>
+                            <td style="padding: 10px; text-align: center;">
+                                {% if p.is_used %}
+                                    <span class="badge badge-used">사용 완료</span>
+                                {% else %}
+                                    <span class="badge badge-unused">사용 가능 (미사용)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">아직 구매한 쿠폰이 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         {% elif page == 'ranking' %}
-        <!-- 3. 누적 공부시간 랭킹 화면 -->
+        <!-- 4. 누적 공부시간 랭킹 화면 -->
         <h2 style="margin-bottom: 12px;">🏆 2-2 공부랭킹</h2>
         <div class="card" style="padding: 10px 20px;">
             <ul class="rank-list">
@@ -490,7 +385,7 @@
         </div>
 
         {% elif page == 'notice' %}
-        <!-- 4. 공지사항 화면 -->
+        <!-- 5. 공지사항 화면 -->
         <h2 style="margin-bottom: 12px;">📢 공지사항</h2>
 
         {% if session['user'].get('is_admin') %}
@@ -532,7 +427,7 @@
         {% endfor %}
 
         {% elif page == 'admin' %}
-        <!-- 5. 관리자 대시보드 -->
+        <!-- 6. 관리자 대시보드 -->
         <h2 style="margin-bottom: 12px;">⚙️ 관리자 대시보드</h2>
         
         <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
@@ -561,9 +456,9 @@
                 </form>
             </div>
 
-            <!-- 신규 일반 상품 등록 -->
+            <!-- 신규 상품 등록 -->
             <div class="card" style="margin-bottom: 0;">
-                <h3>📦 신규 일반 상품 등록</h3>
+                <h3>📦 신규 상품 등록</h3>
                 <form action="/admin/add_product" method="POST">
                     <label for="title">상품명</label>
                     <input type="text" id="title" name="title" placeholder="예: 간식 교환권" required>
@@ -571,90 +466,9 @@
                     <label for="price">가격 (포인트)</label>
                     <input type="number" id="price" name="price" placeholder="예: 20" min="1" required>
                     
-                    <label for="stock">재고 수량</label>
-                    <input type="number" id="stock" name="stock" placeholder="예: 5" min="1" required>
-                    
                     <button type="submit">상품 등록하기</button>
                 </form>
             </div>
-        </div>
-
-        <!-- 🎰 신규 랜덤 상품 세트 등록 -->
-        <div class="card" style="margin-top: 20px;">
-            <h3>🎰 신규 랜덤 상품(돌림판/뽑기) 등록</h3>
-            <form action="/admin/add_random_product" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
-                <div style="flex: 2;">
-                    <label>랜덤 상품 이름</label>
-                    <input type="text" name="title" placeholder="예: 돌림판, 럭키박스" required style="margin-bottom:0;">
-                </div>
-                <div style="flex: 1;">
-                    <label>1회 뽑기 가격 (P)</label>
-                    <input type="number" name="price" placeholder="예: 10" min="1" required style="margin-bottom:0;">
-                </div>
-                <div style="flex: 1;">
-                    <button type="submit" class="btn-purple">등록</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- 🎲 랜덤 상품 구성품 및 확률 설정 -->
-        <div class="card" style="margin-top: 20px;">
-            <h3>🎲 랜덤 상품 구성품 & 확률(가중치) 관리</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">가중치가 높을수록 당첨 확률이 높아집니다. (예: 가중치 10은 1에 비해 10배 자주 나옴)</p>
-
-            {% for rp in random_products %}
-            <div style="border: 1px solid var(--border-color); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h4 style="color: var(--purple-color);">🎰 {{ rp.title }} (1회당 {{ rp.price }} P)</h4>
-                    <form action="/admin/delete_random_product/{{ rp.id }}" method="POST" style="margin:0;">
-                        <button type="submit" class="btn-danger" style="padding: 4px 10px; font-size: 0.75rem; width: auto;">랜덤 상품 전체 삭제</button>
-                    </form>
-                </div>
-
-                <!-- 기존 구성품 목록 -->
-                {% set total_w = namespace(value=0) %}
-                {% for item in rp.random_items %}{% set total_w.value = total_w.value + item.weight %}{% endfor %}
-
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 12px;">
-                    <thead>
-                        <tr style="background: #f8fafc; border-bottom: 1px solid var(--border-color);">
-                            <th style="padding: 6px;">구성품(당첨 항목)</th>
-                            <th style="padding: 6px; text-align: center;">가중치</th>
-                            <th style="padding: 6px; text-align: center;">계산된 확률</th>
-                            <th style="padding: 6px; text-align: center;">관리</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in rp.random_items %}
-                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 6px;">{{ item.item_title }}</td>
-                            <td style="padding: 6px; text-align: center;">{{ item.weight }}</td>
-                            <td style="padding: 6px; text-align: center; font-weight: bold; color: var(--primary-color);">
-                                {{ "%.1f"|format((item.weight / total_w.value) * 100) }}%
-                            </td>
-                            <td style="padding: 6px; text-align: center;">
-                                <form action="/admin/delete_random_item/{{ item.id }}" method="POST" style="margin:0;">
-                                    <button type="submit" class="btn-danger" style="padding: 2px 6px; font-size: 0.7rem; width: auto;">삭제</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="4" style="text-align: center; padding: 10px; color: var(--text-muted);">등록된 당첨 항목이 없습니다.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <!-- 구성품 추가 폼 -->
-                <form action="/admin/add_random_item" method="POST" style="display: flex; gap: 8px; align-items: center;">
-                    <input type="hidden" name="random_product_id" value="{{ rp.id }}">
-                    <input type="text" name="item_title" placeholder="당첨 항목 이름 (예: 꽝, 5포인트 환급, 초콜릿)" required style="margin:0; flex: 2; padding: 8px;">
-                    <input type="number" name="weight" placeholder="가중치(기본:1)" min="1" value="1" required style="margin:0; flex: 1; padding: 8px;">
-                    <button type="submit" class="btn-purple" style="padding: 8px 12px; width: auto;">항목 추가</button>
-                </form>
-            </div>
-            {% else %}
-            <p style="text-align: center; color: var(--text-muted); padding: 10px;">등록된 랜덤 상품 세트가 없습니다.</p>
-            {% endfor %}
         </div>
 
         <!-- 학생 쿠폰 구매 내역 및 사용 상태 처리 -->
@@ -709,7 +523,7 @@
 
         <!-- 등록 상품 삭제 관리 -->
         <div class="card" style="margin-top: 20px;">
-            <h3>📋 등록된 일반 상품 관리</h3>
+            <h3>📋 등록된 상품 관리</h3>
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; margin-top: 12px; text-align: left; font-size: 0.9rem;">
                     <thead>
@@ -717,7 +531,6 @@
                             <th style="padding: 10px;">ID</th>
                             <th style="padding: 10px;">상품명</th>
                             <th style="padding: 10px;">가격</th>
-                            <th style="padding: 10px;">재고</th>
                             <th style="padding: 10px;">관리</th>
                         </tr>
                     </thead>
@@ -727,7 +540,6 @@
                             <td style="padding: 10px;">{{ product.id }}</td>
                             <td style="padding: 10px;"><strong>{{ product.title }}</strong></td>
                             <td style="padding: 10px;">{{ product.price }} P</td>
-                            <td style="padding: 10px;">{{ product.stock }} 개</td>
                             <td style="padding: 10px;">
                                 <form action="/admin/delete_product/{{ product.id }}" method="POST" style="margin: 0;">
                                     <button type="submit" class="btn-danger" style="padding: 6px 12px; font-size: 0.8rem; width: auto;">삭제</button>
@@ -743,8 +555,5 @@
 
         {% endif %}
     </div>
-
-    <!-- 🎡 돌림판 스크립트 -->
-    <script src="{{ url_for('static', filename='js/roulette.js') }}"> </script>
 </body>
 </html>
