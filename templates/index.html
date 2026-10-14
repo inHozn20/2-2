@@ -272,12 +272,12 @@
         </header>
 
         <nav>
-            <a href="/shop" class="{{ 'active' if page == 'shop' }}">🛒 상점</a>
-            <a href="/mypage" class="{{ 'active' if page == 'mypage' }}">👤 마이페이지</a>
-            <a href="/ranking" class="{{ 'active' if page == 'ranking' }}">🏆 공부시간 랭킹</a>
-            <a href="/notices" class="{{ 'active' if page == 'notice' }}">📢 공지사항</a>
+            <a href="/shop" class="{{ 'active' if page == 'shop' }}">상점</a>
+            <a href="/mypage" class="{{ 'active' if page == 'mypage' }}">마이페이지</a>
+            <a href="/ranking" class="{{ 'active' if page == 'ranking' }}">공부시간 랭킹</a>
+            <a href="/notices" class="{{ 'active' if page == 'notice' }}">공지사항</a>
             {% if session['user'].get('is_admin') %}
-            <a href="/admin" class="admin-tab {{ 'active' if page == 'admin' }}">⚙️ 관리자</a>
+            <a href="/admin" class="admin-tab {{ 'active' if page == 'admin' }}">관리자</a>
             {% endif %}
         </nav>
 
@@ -291,7 +291,7 @@
 
         {% if page == 'shop' %}
         <!-- 2. 상점 메인 화면 (일반 상품) -->
-        <h2 style="margin-bottom: 12px;">📦 포인트 상점</h2>
+        <h2 style="margin-bottom: 12px;">포인트 상점</h2>
         <div class="grid">
             {% for product in products %}
             <div class="card" style="margin-bottom: 0;">
@@ -317,7 +317,7 @@
 
         {% elif page == 'mypage' %}
         <!-- 3. 마이페이지 (내 쿠폰 함) -->
-        <h2 style="margin-bottom: 12px;">👤 내 쿠폰함</h2>
+        <h2 style="margin-bottom: 12px;">내 쿠폰함</h2>
         <div class="card">
             <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
                 구매한 쿠폰의 목록과 관리자의 사용 승인 여부를 확인할 수 있습니다.
@@ -358,7 +358,7 @@
 
         {% elif page == 'ranking' %}
         <!-- 4. 누적 공부시간 랭킹 화면 -->
-        <h2 style="margin-bottom: 12px;">🏆 2-2 공부랭킹</h2>
+        <h2 style="margin-bottom: 12px;">2-2 공부랭킹</h2>
         <div class="card" style="padding: 10px 20px;">
             <ul class="rank-list">
                 {% for r in rankings %}
