@@ -187,7 +187,20 @@ def add_product():
     flash("상품이 추가되었습니다.")
     return redirect(url_for('admin'))
 
-# 7-3. 상품 삭제
+# 7-3. 상품 수정 기능 추가
+@app.route('/admin/edit_product/<int:product_id>', methods=['POST'])
+def edit_product(product_id):
+    if 'user' not in session or not session['user'].get('is_admin'):
+        return redirect(url_for('shop'))
+        
+    title = request.form.get('title')
+    price = int(request.form.get('price', 0))
+    
+    supabase.table('products').update({'title': title, 'price': price}).eq('id', product_id).execute()
+    flash("상품 정보가 수정되었습니다.")
+    return redirect(url_for('admin'))
+
+# 7-4. 상품 삭제
 @app.route('/admin/delete_product/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
     if 'user' not in session or not session['user'].get('is_admin'):
@@ -197,7 +210,7 @@ def delete_product(product_id):
     flash("상품이 삭제되었습니다.")
     return redirect(url_for('admin'))
 
-# 7-4. 공부시간 기반 포인트 추가
+# 7-5. 공부시간 기반 포인트 추가
 @app.route('/admin/add_points', methods=['POST'])
 def add_points():
     if 'user' not in session or not session['user'].get('is_admin'):
