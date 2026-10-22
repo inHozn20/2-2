@@ -357,27 +357,29 @@
         </div>
 
         {% elif page == 'ranking' %}
-        <!-- 4. 누적 공부시간 랭킹 화면 -->
-        <h2 style="margin-bottom: 12px;">2-2 공부랭킹</h2>
+        <!-- 4. 누적 공부시간 랭킹 화면 (상위 10위까지만 표시) -->
+        <h2 style="margin-bottom: 12px;">2-2 공부랭킹 (TOP 10)</h2>
         <div class="card" style="padding: 10px 20px;">
             <ul class="rank-list">
                 {% for r in rankings %}
-                <li class="rank-item">
-                    <div style="display: flex; align-items: center;">
-                        <span class="rank-num {% if loop.index == 1 %}rank-top-1{% elif loop.index == 2 %}rank-top-2{% elif loop.index == 3 %}rank-top-3{% endif %}">
-                            {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
-                        </span>
-                        <div>
-                            <strong>{{ r.name }}</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 6px;">({{ r.student_id }})</span>
+                    {% if loop.index <= 10 %}
+                    <li class="rank-item" style="{% if loop.index == 1 %}background: linear-gradient(135deg, #fef3c7, #fffbeb); border-radius: 10px; margin-bottom: 6px; border: 1px solid #fcd34d;{% elif loop.index == 2 %}background: #f1f5f9; border-radius: 10px; margin-bottom: 6px; border: 1px solid #cbd5e1;{% elif loop.index == 3 %}background: #fffbeb; border-radius: 10px; margin-bottom: 6px; border: 1px solid #fed7aa;{% endif %}">
+                        <div style="display: flex; align-items: center;">
+                            <span class="rank-num {% if loop.index == 1 %}rank-top-1{% elif loop.index == 2 %}rank-top-2{% elif loop.index == 3 %}rank-top-3{% endif %}">
+                                {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                            </span>
+                            <div>
+                                <strong style="{% if loop.index <= 3 %}font-size: 1.05rem;{% endif %}">{{ r.name }}</strong>
+                                <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 6px;">({{ r.student_id }})</span>
+                            </div>
                         </div>
-                    </div>
-                    <div style="text-align: right;">
-                        <span style="font-size: 1.1rem; font-weight: bold; color: var(--primary-color);">
-                            {{ (r.total_study_minutes // 60) }}시간 {{ (r.total_study_minutes % 60) }}분
-                        </span>
-                    </div>
-                </li>
+                        <div style="text-align: right;">
+                            <span style="font-size: 1.1rem; font-weight: bold; color: var(--primary-color);">
+                                {{ (r.total_study_minutes // 60) }}시간 {{ (r.total_study_minutes % 60) }}분
+                            </span>
+                        </div>
+                    </li>
+                    {% endif %}
                 {% else %}
                 <li style="text-align: center; padding: 20px; color: var(--text-muted);">아직 기록된 공부시간이 없습니다.</li>
                 {% endfor %}
@@ -521,7 +523,7 @@
             </div>
         </div>
 
-        <!-- 등록 상품 관리 및 수정/삭제 -->
+        <!-- 등록 상품 관리 (수정 및 삭제) -->
         <div class="card" style="margin-top: 20px;">
             <h3>📋 등록된 상품 관리</h3>
             <div style="overflow-x: auto;">
